@@ -9,7 +9,7 @@ class Reddit {
   const temp_file = "temp.png";
 
   const param_file = "reddit.params";
-  const PARAM_REFRESH = 300; // 60*5; // 5 minutes
+  const PARAM_REFRESH = 1800; // 30 minutes
 
   function __construct($sub, $cookies) {
     $this->sub = $sub;
@@ -51,7 +51,7 @@ class Reddit {
   public function postStylesheet($css) {
   
     $post = array(
-      "default_stylesheet" => file_get_contents("default.css"),
+      "default_stylesheet" => "", // no need to send 36K for nothing
       "id" => "#subreddit_stylesheet",
       "op" => "save",
       "r" => $this->sub,

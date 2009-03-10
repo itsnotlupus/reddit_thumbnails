@@ -49,7 +49,10 @@ class ImageLibrary {
     $images = array();
     $offsets = array();
     foreach ($list as $item) {
-      $res = imagecreatefromstring($item["thumbnail"]);
+      $res = @imagecreatefromstring($item["thumbnail"]);
+      if ($res===FALSE) { // not an image
+        continue;
+      }
       $width = max($width, imagesx($res));
       $height += $spacer + imagesy($res);
       $images[$item["id"]] = $res;
