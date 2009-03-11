@@ -15,6 +15,9 @@ class Scanner {
   public function scan() {
     $changed = false;
     $stories = $this->reddit->getStories();
+    if (getType($stories) != "array") {
+      throw new Exception("Blaaargh");
+    }
     $storyCount = 0;
     $out = array();
     foreach ($stories as $story) {
@@ -47,6 +50,9 @@ class Scanner {
   }
 
   protected function scanComments(&$thumbs, $comments) {
+    if (getType($comments) != "array") {
+      throw new Exception("comments is not an array. aborting");
+    }
     foreach ($comments as $comment) {
       $this->scanComment($thumbs, $comment->data);
     }
