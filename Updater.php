@@ -14,6 +14,8 @@ class Updater {
     $css = file_get_contents("custom.css");
     // tweak the CSS, as we assume a specific font-size in .tagline elements
     $css .= "\n.tagline{font-size:12px;line-height:10px;height:12px;}\n";
+    // trace a nice inheritance path from #siteTable_* to each actual comment
+    $css .= ".comment,.entry,.noncollapsed,.child,.sitetable{background-image:inherit;background-repeat:no-repeat;background-position:-1024px 0px;}\n";
 
     // load the local state, which is expected to mirror the server's state
     $state = @unserialize(file_get_contents("updater.state"));
@@ -34,11 +36,14 @@ class Updater {
       } else {
         print "Updater: thumbnails for $sid did not change.\n";
       }
-    // generate some CSS
+      // generate some CSS
+      // cfabbro's genius idea: use the URL only once and inherit the crap out of it
+      // this works around reddit's propensity to make every URL unique and ruin caching
+      $css .= "#siteTable_t3_$sid{ background:url(%%$sid%%) no-repeat -1024px 0px;}\n";
       foreach ($item["offsets"] as $id=>$offset) {
 	list($x,$y,$w,$h) = $offset;
         $h = $h-$this->negmargin;
-        $css .= "div.id-t1_$id > div > div > .tagline { background:url(%%$sid%%) no-repeat -".$x."px -".$y."px; padding-bottom: ".$h."px; margin-bottom: -".$h."px; padding-left: ".($w+10)."px;}\n";
+        $css .= "div.id-t1_$id > div > div > .tagline { background-image:inherit; background-repeat:no-repeat;background-position: -".$x."px -".$y."px; padding-bottom: ".$h."px; margin-bottom: -".$h."px; padding-left: ".($w+10)."px;}\n";
 	$css .= "div.id-t1_$id > div > .noncollapsed { min-height: ".($h+15)."px; }\n";
         $css .= "div.id-t1_$id > div > div > .commentbody { margin-left: ".($w+10)."px; }\n";
         $css .= "div.id-t1_$id > div > div > .flat-list { margin-left: ".($w+10)."px; }\n";
