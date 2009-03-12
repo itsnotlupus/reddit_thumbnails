@@ -4,42 +4,85 @@ class Scanner {
 
   var $reddit;
   var $thumbnailer;
+  var $forceRefresh;
 
-  var $data;
-
-  function __construct($reddit, $tb) {
+  function __construct($reddit, $tb, $forceRefresh = 300) {
     $this->reddit = $reddit;
     $this->thumbnailer = $tb;
+
+    $this->forceRefresh = $forceRefresh;
   }
 
   public function scan() {
-    $changed = false;
+    // 1. get the subreddit main stories
     $stories = $this->reddit->getStories();
     if (getType($stories) != "array") {
       throw new Exception("Blaaargh");
     }
-    $storyCount = 0;
+    // 2. get the cached version
+    $cachedStories = @unserialize(file_get_contents("scanner.state"));
+    if ($cachedStories === FALSE) {
+      $cachedStories = array();
+    }
+    // 3. this is going to be our next cached state
+    $newCachedStories = array();
+    // 4. loop through the new feed
     $out = array();
     foreach ($stories as $story) {
       if ($story->kind != "t3") continue;
       $data = $story->data;
       $id = $data->id;
+      // did we know about this story earlier?
+      $refresh = false;
+      if (isset($cachedStories[$id])) {
+        $cs = $cachedStories[$id];
+        // has the number of comments changed?
+	if ($cs["num_comments"] == $data->num_comments) {
+          // no? how long has it been since we checked?
+          $delta = time() - $cs["refreshed"];
+          if ($delta>$this->forceRefresh) {
+            // it's been a while. refresh anyway.
+            print "Refreshing $id because it's been a while.\n";
+            $refresh = true;
+          }
+        } else {
+          // yes. refresh to find out what changed
+          print "Refreshing $id because num_comment has changed\n";
+          $refresh = true;
+        }
+      } else {
+        // new story? cool.
+        print "Refreshing $id because it's a new story.\n";
+        $refresh = true;
+      }
 
-      $comments = $this->reddit->getComments($id);
-      $thumbs = array();
+      // update cache
+      $newCachedStories[$id] = array(
+        "num_comments" => $data->num_comments,
+        "refreshed" => $refresh?time():$cs["refreshed"],
+        "feed" => $cs["feed"]
+      );
 
-      $this->scanComments($thumbs, $comments);
-
-      // sort comments so upvoted comments have priority for thumbnails
-      uasort($thumbs, array($this, 'commentCmp'));
+      // if necessary, fetch the comment feed
+      if ($refresh) {
+        $comments = $this->reddit->getComments($id);
+        $thumbs = array();
+        $this->scanComments($thumbs, $comments);
+        // sort comments so upvoted comments have priority for thumbnails
+        uasort($thumbs, array($this, 'commentCmp'));
+        $newCachedStories[$id]["feed"] = $thumbs;
+      } else {
+        $thumbs = $cs["feed"];
+      }
 
       if (count($thumbs)>0) {
         $out[$id] = $thumbs;
       }
-      $storyCount++;
+
     }
+    // commit cache to disk
+    file_put_contents("scanner.state", serialize($newCachedStories));
     // return something useful..
-    $this->data = $out;
     return $out;
   }
 
@@ -81,10 +124,6 @@ class Scanner {
     if ($data->replies) {
       $this->scanComments($thumbnails, $data->replies->data->children);
     }
-  }
-
-  public function getData() {
-    return $this->data;
   }
 
 }
