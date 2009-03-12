@@ -48,13 +48,20 @@ class ImageLibrary {
     $height = 0;
     $images = array();
     $offsets = array();
+    $hashes = array();
     foreach ($list as $item) {
-      $res = @imagecreatefromstring($item["thumbnail"]);
-      if ($res===FALSE) { // not an image
-        continue;
+      $hash = md5($item["thumbnail"]);
+      if (isset($hashes[$hash])) {
+        $res = $hashes[$hash];
+      } else {
+        $res = @imagecreatefromstring($item["thumbnail"]);
+        if ($res===FALSE) { // not an image
+          continue;
+        }
+        $hashes[$hash] = $item["id"];
+        $width = max($width, imagesx($res));
+        $height += $spacer + imagesy($res);
       }
-      $width = max($width, imagesx($res));
-      $height += $spacer + imagesy($res);
       $images[$item["id"]] = $res;
     }
     if ($width==0) {
@@ -62,27 +69,27 @@ class ImageLibrary {
     }
     // ok. create our transparent canvas
     $res = imagecreatetruecolor($width, $height);
-/*
-    imagesavealpha($res, true);
-    $trans_color = imagecolorallocatealpha($res, 0,0,0, 127);
-*/
-    $trans_index = imagecolorallocate( $res,
+    $trans_color = imagecolorallocate( $res,
       hexdec($bgcolor[0].$bgcolor[1]),
       hexdec($bgcolor[2].$bgcolor[3]),
       hexdec($bgcolor[4].$bgcolor[5]) );
-    $trans_color = imagecolortransparent( $res, $trans_index);
-    imagefill( $res, 0,0, $trans_color);
+    imagefilledrectangle( $res, 0,0, $width, $height, $trans_color);
 
     $y=0;
     foreach ($images as $id=>$image) {
-      $w = imagesx($image);
-      $h = imagesy($image);
-      $x=$width-$w;
-      $offsets[$id] = array($x,$y,$w,$h);
-      $y += $spacer;
-      imagecopy($res, $image, $x,$y, 0,0,  $w,$h);
-      imagedestroy($image);
-      $y+=$h;
+      if (getType($image)=="string") {
+        // it's a duplicate thumbnail. just point the offset to it and be done.
+        $offsets[$id] = $offsets[$image];
+      } else {
+        $w = imagesx($image);
+        $h = imagesy($image);
+        $x=$width-$w;
+        $offsets[$id] = array($x,$y,$w,$h);
+        $y += $spacer;
+        imagecopy($res, $image, $x,$y, 0,0,  $w,$h);
+        imagedestroy($image);
+        $y+=$h;
+      }
     }
     imagejpeg($res, ImageLibrary::temp_file);
     imagedestroy($res);

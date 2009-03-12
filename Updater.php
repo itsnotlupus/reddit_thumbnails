@@ -42,7 +42,7 @@ class Updater {
       $css .= "#siteTable_t3_$sid{ background:url(%%$sid%%) no-repeat -1024px 0px;}\n";
       foreach ($item["offsets"] as $id=>$offset) {
 	list($x,$y,$w,$h) = $offset;
-        $h = $h-$this->negmargin;
+        $h = max(0,$h-$this->negmargin);
         $css .= "div.id-t1_$id > div > div > .tagline { background-image:inherit; background-repeat:no-repeat;background-position: -".$x."px -".$y."px; padding-bottom: ".$h."px; margin-bottom: -".$h."px; padding-left: ".($w+10)."px;}\n";
 	$css .= "div.id-t1_$id > div > .noncollapsed { min-height: ".($h+15)."px; }\n";
         $css .= "div.id-t1_$id > div > div > .commentbody { margin-left: ".($w+10)."px; }\n";
