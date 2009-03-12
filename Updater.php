@@ -2,13 +2,18 @@
 
 class Updater {
 
-  public function __construct($reddit) {
+  var $reddit;
+  var $negmargin;
+
+  public function __construct($reddit, $negmargin) {
     $this->reddit = $reddit;
+    $this->negmargin = $negmargin;
   }
 
   public function update($data) {
-    // generate some CSS
     $css = file_get_contents("custom.css");
+    // tweak the CSS, as we assume a specific font-size in .tagline elements
+    $css .= "\n.tagline{font-size:12px;line-height:10px;height:12px;}\n";
 
     // load the local state, which is expected to mirror the server's state
     $state = @unserialize(file_get_contents("updater.state"));
@@ -29,11 +34,14 @@ class Updater {
       } else {
         print "Updater: thumbnails for $sid did not change.\n";
       }
+    // generate some CSS
       foreach ($item["offsets"] as $id=>$offset) {
-        $css .= "div.id-t1_$id > div > div > .tagline { background:url(%%$sid%%) no-repeat 0px -".$offset[0]."px; padding-bottom: ".$offset[1]."px; margin-bottom: -".$offset[1]."px;}\n";
-	$css .= "div.id-t1_$id > div > .noncollapsed { min-height: ".($offset[1]+15)."px; }\n";
-        $css .= "div.id-t1_$id > div > div > .commentbody { margin-left: ".($offset[2]+10)."px; }\n";
-        $css .= "div.id-t1_$id > div > div > .flat-list { margin-left: ".($offset[2]+10)."px; }\n";
+	list($x,$y,$w,$h) = $offset;
+        $h = $h-$this->negmargin;
+        $css .= "div.id-t1_$id > div > div > .tagline { background:url(%%$sid%%) no-repeat -".$x."px -".$y."px; padding-bottom: ".$h."px; margin-bottom: -".$h."px; padding-left: ".($w+10)."px;}\n";
+	$css .= "div.id-t1_$id > div > .noncollapsed { min-height: ".($h+15)."px; }\n";
+        $css .= "div.id-t1_$id > div > div > .commentbody { margin-left: ".($w+10)."px; }\n";
+        $css .= "div.id-t1_$id > div > div > .flat-list { margin-left: ".($w+10)."px; }\n";
       }
     }
     // post CSS

@@ -6,9 +6,9 @@ class ImageLibrary {
 
   public static function resize($img, $maxWidth, $maxHeight) {
 
-    print "resize of img (".strlen(img)." bytes)\n";
+    print "resize of img (".strlen($img)." bytes)\n";
 
-    $res= imagecreatefromstring($img);
+    $res= @imagecreatefromstring($img);
     if ($res === FALSE) return array(FALSE,FALSE,FALSE);
 
     $width = imagesx($res);
@@ -57,6 +57,9 @@ class ImageLibrary {
       $height += $spacer + imagesy($res);
       $images[$item["id"]] = $res;
     }
+    if ($width==0) {
+      return array(FALSE,FALSE);
+    }
     // ok. create our transparent canvas
     $res = imagecreatetruecolor($width, $height);
 /*
@@ -74,9 +77,10 @@ class ImageLibrary {
     foreach ($images as $id=>$image) {
       $w = imagesx($image);
       $h = imagesy($image);
-      $offsets[$id] = array($y,$h,$w);
+      $x=$width-$w;
+      $offsets[$id] = array($x,$y,$w,$h);
       $y += $spacer;
-      imagecopy($res, $image, 0,$y, 0,0,  $w,$h);
+      imagecopy($res, $image, $x,$y, 0,0,  $w,$h);
       imagedestroy($image);
       $y+=$h;
     }

@@ -22,7 +22,8 @@ class Thumbnailer extends Cache {
     if ($data === FALSE) return FALSE;
 
     list($thumbnail,$width,$height) = ImageLibrary::resize($data, $this->width, $this->height);
-    if ($thumbnail === FALSE) return FALSE;
+    // if we can't generate a thumbnail once, we probably never won't. 
+    if ($thumbnail === FALSE) return "";
 
     return $thumbnail;
 

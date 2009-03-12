@@ -18,7 +18,7 @@ abstract class Cache {
     $d2 = $d1."/".substr($hash,2,2);
     $file = $d2."/".$hash;
     if (file_exists($file)) {
-      print get_class($this).": returning hit on $id\n";
+      //print get_class($this).": returning hit on $id\n";
       return file_get_contents($file);
     }
     $data = $this->acquire($id);

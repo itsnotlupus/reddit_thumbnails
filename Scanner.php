@@ -75,6 +75,7 @@ class Scanner {
         "thumbnail"=>$thumbnail, 
         "sid"=>substr($data->link_id,3),
         "score"=>((int)$data->ups)-((int)$data->downs));
+      //print "URL = $url, strlen(thumbnail)=".strlen($thumbnail)."\n";
     }
     // check for children
     if ($data->replies) {
