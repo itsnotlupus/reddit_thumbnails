@@ -61,11 +61,16 @@ class Reddit extends StateKeeper {
   }
 
   public function getStylesheet() {
-    return $this->getReddit("/r/".$this->sub."/stylesheet.css", 0);
+    $html = $this->getReddit("/r/".$this->sub."/about/stylesheet", 0);
+    if (preg_match('{<textarea rows="20" cols="20" id="stylesheet_contents" name="stylesheet_contents" >(.*?)</textarea>}s', $html, $out)) {
+      $css = html_entity_decode($out[1]);
+      return $css;
+    }
+    return "";
   }
   
   public function postStylesheet($css, $tries=3) {
-  
+ 
     $post = array(
       "default_stylesheet" => "", // no need to send 36K for nothing
       "id" => "#subreddit_stylesheet",

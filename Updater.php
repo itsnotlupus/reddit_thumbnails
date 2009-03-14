@@ -12,11 +12,6 @@ class Updater extends StateKeeper {
   }
 
   public function update($data) {
-    $oldCss = $this->reddit->getStylesheet();
-    print "oldCss = ".strlen($oldCss)." bytes.\n";
-    if ($oldCss == "") {
-      $oldCss = file_get_contents("custom.css");
-    }
     $css = "";
 
     // tweak the CSS, as we assume a specific font-size in .tagline elements
@@ -54,14 +49,20 @@ class Updater extends StateKeeper {
       }
     }
     $css = "/*--BEGIN THUMBNAILS CSS--*/\n".$css."/*--END THUMBNAILS CSS--*/\n";
-    // inject new CSS into old
-    $newCss = preg_replace('{/\*--BEGIN THUMBNAILS CSS--\*/.*/\*--END THUMBNAILS CSS--\*/}s', $css, $oldCss);
-    if ($newCss == $oldCss) {
-      $newCss = $oldCss . "\n" . $css;
-    }
 
     // post CSS
     if ($css != $state["css"]) {
+
+      $oldCss = $this->reddit->getStylesheet();
+      print "oldCss = ".strlen($oldCss)." bytes.\n";
+      if ($oldCss == "") {
+        $oldCss = file_get_contents("custom.css");
+      }
+      // inject new CSS into old
+      $newCss = preg_replace('{/\*--BEGIN THUMBNAILS CSS--\*/.*/\*--END THUMBNAILS CSS--\*/}s', $css, $oldCss);
+      if ($newCss == $oldCss) {
+        $newCss = $oldCss . "\n" . $css;
+      }
       if($this->reddit->postStylesheet($newCss)) {
         $state["css"] = $css;
       }
