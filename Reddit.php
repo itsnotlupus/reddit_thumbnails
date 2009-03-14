@@ -1,6 +1,6 @@
 <?php
 
-class Reddit {
+class Reddit extends StateKeeper {
   
   var $sub;
   var $cookies;
@@ -12,6 +12,7 @@ class Reddit {
   const PARAM_REFRESH = 1800; // 30 minutes
 
   function __construct($sub, $cookies) {
+    parent::__construct(FALSE);
     $this->sub = $sub;
     $this->cookies= $cookies;
     $this->getParams();
@@ -31,7 +32,7 @@ class Reddit {
   
   protected function getParams() {
     // get a locally cached version first
-    $redditParams = unserialize(file_get_contents(Reddit::param_file));
+    $redditParams = $this->state;
     if ($redditParams!==FALSE) {
       $this->uh = $redditParams["uh"];
       $this->bucket = $redditParams["bucket"];
@@ -52,11 +53,15 @@ class Reddit {
       $this->bucket = $out[1];
       $ts = time();
     }
-    file_put_contents(Reddit::param_file, serialize(array(
+    $this->state = array(
 	"ts"=>$ts,
 	"uh"=>$this->uh,
 	"bucket"=>$this->bucket
-    )));
+    );
+  }
+
+  public function getStylesheet() {
+    return $this->getReddit("/r/".$this->sub."/stylesheet.css", 0);
   }
   
   public function postStylesheet($css, $tries=3) {
@@ -72,7 +77,7 @@ class Reddit {
     );
   
     $ret = Network::post("http://www.reddit.com/api/subreddit_stylesheet", $this->cookies, $post);
-    if (strpos($ret, "commentbody")===FALSE) {
+    if (strpos($ret, "background")===FALSE) {
       print "ERROR: CSS post failed: $ret\n";
       if ($tries>0) {
         return $this->postStylesheet($css, $tries-1);

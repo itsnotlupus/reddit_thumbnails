@@ -67,8 +67,10 @@ class Shuffler {
     $out = array();
     for ($i=0;$i<$used;$i++) {
       list($image, $offsets) = ImageLibrary::aggregate($this->buckets[$i], $this->bgcolor, $this->spacer);
-      print "Generated image for bucket #$i: ".strlen($image)." bytes\n";
-      $out[] = array("image"=>$image, "offsets"=>$offsets, "id"=>$this->buckets[$i][0]["sid"]);
+      if ($image !== FALSE) {
+        print "Generated image for bucket #$i: ".strlen($image)." bytes\n";
+        $out[] = array("image"=>$image, "offsets"=>$offsets, "id"=>$this->buckets[$i][0]["sid"]);
+      }
     }
 
     return $out;

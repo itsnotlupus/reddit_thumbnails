@@ -1,12 +1,13 @@
 <?php
 
-class Scanner {
+class Scanner extends StateKeeper {
 
   var $reddit;
   var $thumbnailer;
   var $forceRefresh;
 
   function __construct($reddit, $tb, $forceRefresh = 300) {
+    parent::__construct(array());
     $this->reddit = $reddit;
     $this->thumbnailer = $tb;
 
@@ -20,10 +21,8 @@ class Scanner {
       throw new Exception("Blaaargh");
     }
     // 2. get the cached version
-    $cachedStories = @unserialize(file_get_contents("scanner.state"));
-    if ($cachedStories === FALSE) {
-      $cachedStories = array();
-    }
+    $cachedStories = $this->state;
+
     // 3. this is going to be our next cached state
     $newCachedStories = array();
     // 4. loop through the new feed
@@ -81,7 +80,7 @@ class Scanner {
 
     }
     // commit cache to disk
-    file_put_contents("scanner.state", serialize($newCachedStories));
+    $this->state = $newCachedStories;
     // return something useful..
     return $out;
   }

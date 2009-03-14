@@ -24,7 +24,6 @@ abstract class Cache {
     $data = $this->acquire($id);
     if ($data===FALSE) return FALSE;
     if (!file_exists($d1)) {
-      print "Attempting to mkdir $d1\n";
       mkdir($d1);
     }
     if (!file_exists($d2)) {

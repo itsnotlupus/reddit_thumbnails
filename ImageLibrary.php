@@ -33,6 +33,10 @@ class ImageLibrary {
       $new_height = $maxWidth/$ratio;
     }
     $new_res = imagecreatetruecolor($new_width, $new_height);
+/*
+    imagecolortransparent($new_res, 0);
+    imagealphablending($new_res, false);
+*/
     imagecopyresampled($new_res, $res, 0,0,0,0, $new_width, $new_height, $width, $height);
     imagedestroy($res);
     imagejpeg($new_res, ImageLibrary::temp_file);

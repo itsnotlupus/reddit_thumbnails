@@ -1,27 +1,31 @@
 <?php
 
-class Updater {
+class Updater extends StateKeeper {
 
   var $reddit;
   var $negmargin;
 
   public function __construct($reddit, $negmargin) {
+    parent::__construct(array("css"=>"", "pics"=>array()));
     $this->reddit = $reddit;
     $this->negmargin = $negmargin;
   }
 
   public function update($data) {
-    $css = file_get_contents("custom.css");
+    $oldCss = $this->reddit->getStylesheet();
+    print "oldCss = ".strlen($oldCss)." bytes.\n";
+    if ($oldCss == "") {
+      $oldCss = file_get_contents("custom.css");
+    }
+    $css = "";
+
     // tweak the CSS, as we assume a specific font-size in .tagline elements
     $css .= "\n.tagline{font-size:12px;line-height:10px;height:12px;}\n";
     // trace a nice inheritance path from #siteTable_* to each actual comment
     $css .= ".comment,.entry,.noncollapsed,.child,.sitetable{background-image:inherit;background-repeat:no-repeat;background-position:-1024px 0px;}\n";
 
     // load the local state, which is expected to mirror the server's state
-    $state = @unserialize(file_get_contents("updater.state"));
-    if ($state === FALSE) {
-      $state = array("css"=>"", "pics"=>array());
-    }
+    $state = $this->state;
 
     // upload thumbnails
     $used = array();
@@ -49,9 +53,16 @@ class Updater {
         $css .= "div.id-t1_$id > div > div > .flat-list { margin-left: ".($w+10)."px; }\n";
       }
     }
+    $css = "/*--BEGIN THUMBNAILS CSS--*/\n".$css."/*--END THUMBNAILS CSS--*/\n";
+    // inject new CSS into old
+    $newCss = preg_replace('{/\*--BEGIN THUMBNAILS CSS--\*/.*/\*--END THUMBNAILS CSS--\*/}s', $css, $oldCss);
+    if ($newCss == $oldCss) {
+      $newCss = $oldCss . "\n" . $css;
+    }
+
     // post CSS
     if ($css != $state["css"]) {
-      if($this->reddit->postStylesheet($css)) {
+      if($this->reddit->postStylesheet($newCss)) {
         $state["css"] = $css;
       }
     } else {
@@ -69,7 +80,7 @@ class Updater {
     }
 
     // save local state
-    file_put_contents("updater.state", serialize($state));
+    $this->state = $state;
   }
 
 }
